@@ -10,4 +10,5 @@ export default defineConfig({
     open: true, // Automatically open the browser when the server starts
     port: 3000, // Specify the port to run the server on
   },
+  base: "/QRito",
 });

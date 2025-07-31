@@ -5,6 +5,7 @@ import QRCode from "react-qr-code";
 import * as htmlToImage from "html-to-image";
 import { useForm } from "@/hooks/useForm";
 import { Button } from "@/components/Button";
+import { QRIcon } from "@/components/QRIcon";
 
 interface QRViewerProps {
   qrInput: string | null;
@@ -145,7 +146,11 @@ export function QRCodePreview({ qrInput, onClear }: QRViewerProps) {
 
   return (
     <div className="w-full h-fit px-5 py-7 bg-gray-100 lg:h-screen lg:flex lg:flex-col lg:justify-center lg:items-center">
-      <div className="w-full h-100 bg-white border border-dashed border-gray-400 rounded-lg flex items-center justify-center mb-6 lg:h-120">
+      <div
+        className={`w-full h-100 bg-white border border-dashed border-gray-400 rounded-lg flex items-center justify-center mb-6 lg:h-120 ${
+          !qrInput && "opacity-50"
+        }`}
+      >
         {/* QR Code would be displayed here after generation */}
         {qrInput ? (
           <div ref={qrRef} className="qr-container">
@@ -159,7 +164,10 @@ export function QRCodePreview({ qrInput, onClear }: QRViewerProps) {
             />
           </div>
         ) : (
-          <span className="text-gray-500">QR Code Preview</span>
+          <div className="flex flex-col items-center gap-6">
+            <QRIcon className="opacity-50" />
+            <span className="text-gray-500 font-bold">QR Code Preview</span>
+          </div>
         )}
       </div>
       <div className="w-full flex justify-between gap-4 md:justify-center">

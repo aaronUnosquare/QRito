@@ -1,8 +1,10 @@
 import { useEffect, useRef } from "react";
 import { useReactToPrint } from "react-to-print";
+import toast from "react-hot-toast";
 import QRCode from "react-qr-code";
 import * as htmlToImage from "html-to-image";
 import { useForm } from "@/hooks/useForm";
+import { Button } from "@/components/Button";
 
 interface QRViewerProps {
   qrInput: string | null;
@@ -14,10 +16,19 @@ type BgFormColor = {
   qrFgColor: string;
 };
 
+const TOAST_CONFIG = {
+  duration: 5000,
+};
+
 export function QRCodePreview({ qrInput, onClear }: QRViewerProps) {
   const qrRef = useRef<HTMLDivElement>(null);
   const blobRef = useRef<Blob | null>(null);
-  const handlePrint = useReactToPrint({ contentRef: qrRef });
+  const handlePrint = useReactToPrint({
+    contentRef: qrRef,
+    onAfterPrint: () => {
+      toast.success("QR Code printed successfully", TOAST_CONFIG);
+    },
+  });
   const { formData, handleInputChange, handleClear } = useForm<BgFormColor>({
     initialState: {
       qrBgColor: "#FFFFFF",
@@ -26,10 +37,10 @@ export function QRCodePreview({ qrInput, onClear }: QRViewerProps) {
   });
 
   useEffect(() => {
-    if (qrInput) {
+    if (qrInput && formData) {
       generateImageBlob();
     }
-  }, [qrInput]);
+  }, [qrInput, formData]);
 
   const generateImageBlob = () => {
     if (!qrRef.current) {
@@ -92,19 +103,20 @@ export function QRCodePreview({ qrInput, onClear }: QRViewerProps) {
           link.href = dataUrl;
           link.setAttribute("download", `qr-code-${crypto.randomUUID()}.png`);
           link.click();
+
+          toast.success("QR Code downloaded successfully", TOAST_CONFIG);
         })
         .catch((error) => {
-          console.error("Error downloading QR Code:", error);
+          toast.error(`Error downloading QR Code: ${error}`, TOAST_CONFIG);
         });
     } else {
-      console.error("QR Code reference is not set");
+      toast.error("QR Code reference is not set", TOAST_CONFIG);
     }
   };
 
   const handleCopy = async () => {
     if (!blobRef.current) {
-      console.error("Blob reference is not set");
-      alert("Blob reference is not set");
+      toast.error("Blob reference is not set", TOAST_CONFIG);
       return;
     }
 
@@ -116,17 +128,17 @@ export function QRCodePreview({ qrInput, onClear }: QRViewerProps) {
         }),
       ]);
 
-      console.log("QR Code copied to clipboard successfully");
+      toast.success("QR Code copied to clipboard successfully", TOAST_CONFIG);
     } catch (err) {
-      console.error("Failed to copy QR Code to clipboard:", err);
-      alert("Failed to copy QR Code to clipboard");
-      alert(err);
+      toast.error(`Failed to copy QR Code to clipboard: ${err}`, TOAST_CONFIG);
     }
   };
 
   const clearForm = () => {
     handleClear();
     onClear?.();
+
+    toast.success("Form cleared successfully", TOAST_CONFIG);
   };
 
   const { qrBgColor, qrFgColor } = formData;
@@ -191,34 +203,22 @@ export function QRCodePreview({ qrInput, onClear }: QRViewerProps) {
         </div>
       </div>
       <div className="w-full flex flex-col items-center justify-center gap-2 mt-6 md:flex-row">
-        <button
-          className="w-full bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600 transition duration-300 ease-in-out disabled:opacity-50 disabled:cursor-not-allowed md:w-fit"
-          disabled={!qrInput}
-          onClick={handleDownload}
-        >
+        <Button disabled={!qrInput} onClick={handleDownload}>
           Download
-        </button>
-        <button
-          className="w-full bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600 transition duration-300 ease-in-out disabled:opacity-50 disabled:cursor-not-allowed md:w-fit"
-          disabled={!qrInput}
-          onClick={handlePrint}
-        >
+        </Button>
+        <Button disabled={!qrInput} onClick={handlePrint}>
           Print
-        </button>
-        <button
-          className="w-full bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600 transition duration-300 ease-in-out disabled:opacity-50 disabled:cursor-not-allowed md:w-fit"
-          disabled={!qrInput}
-          onClick={handleCopy}
-        >
+        </Button>
+        <Button disabled={!qrInput} onClick={handleCopy}>
           Copy
-        </button>
-        <button
-          className="w-full bg-red-500 text-white px-4 py-2 rounded hover:bg-red-600 transition duration-300 ease-in-out disabled:opacity-50 disabled:cursor-not-allowed md:w-fit"
+        </Button>
+        <Button
+          className="bg-red-500 hover:bg-red-600"
           disabled={!qrInput}
           onClick={clearForm}
         >
           Clear
-        </button>
+        </Button>
       </div>
     </div>
   );

@@ -1,20 +1,20 @@
 @import "tailwindcss";
 
 body {
-  font-family: "Inter", sans-serif;
-  font-optical-sizing: auto;
-  font-style: normal;
+	font-family: "Inter", sans-serif;
+	font-optical-sizing: auto;
+	font-style: normal;
 }
 
 @theme {
-  --color-raven: #6f787f;
+	--color-raven: #6f787f;
 }
 
 @media print {
-  .qr-container {
-    position: absolute;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%);
-  }
+	.qr-container {
+		position: absolute;
+		top: 50%;
+		left: 50%;
+		transform: translate(-50%, -50%);
+	}
 }

@@ -1,4 +1,4 @@
-import { useRef } from "react";
+import { useEffect, useRef } from "react";
 import { useReactToPrint } from "react-to-print";
 import QRCode from "react-qr-code";
 import * as htmlToImage from "html-to-image";
@@ -16,6 +16,7 @@ type BgFormColor = {
 
 export function QRCodePreview({ qrInput, onClear }: QRViewerProps) {
   const qrRef = useRef<HTMLDivElement>(null);
+  const blobRef = useRef<Blob | null>(null);
   const handlePrint = useReactToPrint({ contentRef: qrRef });
   const { formData, handleInputChange, handleClear } = useForm<BgFormColor>({
     initialState: {
@@ -23,6 +24,64 @@ export function QRCodePreview({ qrInput, onClear }: QRViewerProps) {
       qrFgColor: "#000000",
     },
   });
+
+  useEffect(() => {
+    if (qrInput) {
+      generateImageBlob();
+    }
+  }, [qrInput]);
+
+  const generateImageBlob = () => {
+    if (!qrRef.current) {
+      console.error("QR Code reference is not set");
+      alert("QR Code reference is not set");
+      return;
+    }
+
+    const svgElement = qrRef.current.querySelector("svg");
+
+    if (!svgElement) {
+      console.error("SVG element not found in QR Code reference");
+      alert("SVG element not found in QR Code reference");
+      return;
+    }
+
+    const svgData = new XMLSerializer().serializeToString(svgElement);
+    const svgBlob = new Blob([svgData], { type: "image/svg+xml" });
+
+    // Create image from SVG blob
+    const img = new Image();
+    const url = URL.createObjectURL(svgBlob);
+
+    img.onload = async () => {
+      // Draw the image onto a canvas
+      const canvas = document.createElement("canvas");
+      canvas.width = img.width;
+      canvas.height = img.height;
+      const ctx = canvas.getContext("2d");
+
+      if (!ctx) {
+        console.error("Canvas context not available");
+        alert("Canvas context not available");
+        return;
+      }
+
+      ctx.drawImage(img, 0, 0);
+
+      canvas.toBlob((canvasBlob) => {
+        if (!canvasBlob) {
+          console.error("Failed to convert canvas to blob");
+          alert("Failed to convert canvas to blob");
+          return;
+        }
+
+        blobRef.current = canvasBlob;
+        URL.revokeObjectURL(url);
+      }, "image/png");
+    };
+
+    img.src = url;
+  };
 
   const handleDownload = () => {
     if (qrRef.current) {
@@ -43,78 +102,25 @@ export function QRCodePreview({ qrInput, onClear }: QRViewerProps) {
   };
 
   const handleCopy = async () => {
-    if (!qrRef.current) {
-      console.error("QR Code reference is not set");
-      alert("QR Code reference is not set");
+    if (!blobRef.current) {
+      console.error("Blob reference is not set");
+      alert("Blob reference is not set");
       return;
     }
 
     try {
-      const svgElement = qrRef.current.querySelector("svg");
+      // Copy the blob to clipboard
+      await navigator.clipboard.write([
+        new ClipboardItem({
+          [blobRef.current.type]: blobRef.current,
+        }),
+      ]);
 
-      if (!svgElement) {
-        console.error("SVG element not found in QR Code reference");
-        alert("SVG element not found in QR Code reference");
-        return;
-      }
-
-      const svgData = new XMLSerializer().serializeToString(svgElement);
-      const svgBlob = new Blob([svgData], { type: "image/svg+xml" });
-
-      // Create image from SVG blob
-      const img = new Image();
-      const url = URL.createObjectURL(svgBlob);
-
-      img.onload = async () => {
-        // Draw the image onto a canvas
-        const canvas = document.createElement("canvas");
-        canvas.width = img.width;
-        canvas.height = img.height;
-        const ctx = canvas.getContext("2d");
-
-        if (!ctx) {
-          console.error("Canvas context not available");
-          alert("Canvas context not available");
-          return;
-        }
-
-        ctx.drawImage(img, 0, 0);
-
-        // Convert canvas to blob (PNG format)
-        canvas.toBlob(async (blob) => {
-          if (!blob) {
-            console.error("Failed to convert canvas to blob");
-            alert("Failed to convert canvas to blob");
-            return;
-          }
-
-          try {
-            // Copy the blob to clipboard
-            await navigator.clipboard.write([
-              new ClipboardItem({
-                [blob.type]: blob,
-              }),
-            ]);
-            console.log("QR Code copied to clipboard successfully");
-          } catch (err) {
-            console.error("Failed to copy QR Code to clipboard:", err);
-            alert("Failed to copy QR Code to clipboard");
-            alert(err);
-          }
-        }, "image/png");
-
-        // Clean up the object URL
-        URL.revokeObjectURL(url);
-      };
-
-      img.onerror = (error) => {
-        console.error("Error loading image from SVG blob:", error);
-        URL.revokeObjectURL(url);
-      };
-
-      img.src = url; // Start loading the image
-    } catch (error) {
-      console.error("Error copying QR Code to clipboard:", error);
+      console.log("QR Code copied to clipboard successfully");
+    } catch (err) {
+      console.error("Failed to copy QR Code to clipboard:", err);
+      alert("Failed to copy QR Code to clipboard");
+      alert(err);
     }
   };
 

@@ -1,7 +1,7 @@
-import type { ComponentPropsWithoutRef, RefAttributes } from "react";
+import type { ComponentPropsWithoutRef, RefAttributes } from 'react';
 
 interface ButtonProps
-	extends ComponentPropsWithoutRef<"button">,
+	extends ComponentPropsWithoutRef<'button'>,
 		RefAttributes<HTMLButtonElement> {
 	children: React.ReactNode;
 	className?: string;
